@@ -1,16 +1,15 @@
 /*
  * =============================================================================
- *  Original Name:  sendData.c
  *       Filename:  inject.c
  *
- *    Description:  send packets
- *        Version:  1.0
+ *    Description:  send packets with milisecond interval
+ *        Version:  1.1
  *
  *         Author:  Yaxiong Xie
  *          Email:  <xieyaxiongfly@gmail.com>
  *   Organization:  WANS group @ Nanyang Technological University
  *
- *    Modified by:  Jio Gim
+ *  Refactored by:  Jio Gim <jio@wldh.org>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
