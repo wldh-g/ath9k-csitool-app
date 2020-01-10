@@ -13,22 +13,30 @@ Before contiune, install `hostapd`, `isc-dhcp-server`.
 ```sh
 git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
 cd BPI-R2-Atheros-CSITool-App/injector
-./setup.sh
 make
+./load.sh
 ./inject help
 ```
 
 You can configure MCS, channel at  `injector/hostapd.conf`.
 
+To turn off dhcp server and hostapd, unload the injector:
+
+```sh
+./unload.sh
+```
+
 ##### Receiver
 
 ```sh
 git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
-cd BPI-R2-Atheros-CSITool-App/injector
-./setup.sh
+cd BPI-R2-Atheros-CSITool-App/receiver
 make
-./recv_csi [file name]
+./setup.sh
+./logcsi [FILE NAME]
 ```
+
+You can omit `FILE NAME` for just checking its functionality.
 
 ### How To Use Recorded CSI
 
@@ -36,3 +44,4 @@ make
 2. Parse recorded data using `read_log_file.m`.
 
 For more information, look at [the project homepage](https://wands.sg/research/wifi/AtherosCSI/).
+
