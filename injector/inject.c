@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 	if (rbufSize < 0) perror("getrandom");
 	else {
 		printf("[Injection Information]\n");
-		printf("Packet Length  : %lu bytes", ehSize);
+		printf("Packet Length  : %zu bytes", ehSize);
 		printf("Payload Length : %du bytes\n", rbufSize);
 		printf("Packet Count   : %llu pkts\n", cnt);
 		printf("Injection Rate : %.3f pkts/s\n\n", injectionRate);
