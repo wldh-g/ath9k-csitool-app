@@ -47,9 +47,15 @@
 #define DEFAULT_DEST_MAC5 0xFF
 
 #define INTERFACE_NAME "wlp1s0"
-#define BUF_SIZE 2048
+#define BUF_SIZE 1024
 
 int main(int argc, char *argv[]) {
+
+  /* Check is got privileged */
+  if (geteuid() != 0) {
+    printf("Run this with the root privilege for correct socket descriptor.\n");
+    exit(0);
+  }
 
   /* Check is help message time */
   if (
@@ -62,7 +68,8 @@ int main(int argc, char *argv[]) {
     printf("Example: %s 100 10000 12:34:56:78:90:FF\n", argv[0]);
     printf("Example: %s 100 10000\n\n", argv[0]);
     printf("PACKETS_TO_SEND\n  The number of packets to inject. Set this zero for infinite injection.\n\n");
-    printf("SEND_DELAY\n  Injection interval in microseconds. Set this zero for no-delay injection.\n");
+    printf("SEND_DELAY\n  Injection interval in microseconds. Set this zero for no-delay injection.\n\n");
+    printf("NOTE: The length of packet is hard-coded (BUF_SIZE).\n");
     exit(0);
   }
 
@@ -98,11 +105,13 @@ int main(int argc, char *argv[]) {
   }
 
   /* Get the index & mac of the interface to send on */
-  struct ifreq intf;
-  memset(&intf, 0, sizeof(struct ifreq));
-  strncpy(intf.ifr_name, INTERFACE_NAME, IFNAMSIZ - 1);
-  if (ioctl(sock, SIOCGIFINDEX, &intf) < 0) perror("SIOCGIFINDEX");
-  if (ioctl(sock, SIOCGIFHWADDR, &intf) < 0) perror("SIOCGIFHWADDR");
+  struct ifreq ifIndex, ifMAC;
+  memset(&ifIndex, 0, sizeof(struct ifreq));
+  strncpy(ifIndex.ifr_name, INTERFACE_NAME, IFNAMSIZ - 1);
+  if (ioctl(sock, SIOCGIFINDEX, &ifIndex) < 0) perror("SIOCGIFINDEX");
+  memset(&ifMAC, 0, sizeof(struct ifreq));
+  strncpy(ifMAC.ifr_name, INTERFACE_NAME, IFNAMSIZ - 1);
+  if (ioctl(sock, SIOCGIFHWADDR, &ifMAC) < 0) perror("SIOCGIFHWADDR");
 
   /* Initialize buffer */
   char sendBuf[BUF_SIZE];
@@ -110,12 +119,12 @@ int main(int argc, char *argv[]) {
 
   /* Construct the Ethernet header */
   struct ether_header *eh = (struct ether_header *) sendBuf;
-  eh->ether_shost[0] = ((uint8_t *)&intf.ifr_hwaddr.sa_data)[0];
-  eh->ether_shost[1] = ((uint8_t *)&intf.ifr_hwaddr.sa_data)[1];
-  eh->ether_shost[2] = ((uint8_t *)&intf.ifr_hwaddr.sa_data)[2];
-  eh->ether_shost[3] = ((uint8_t *)&intf.ifr_hwaddr.sa_data)[3];
-  eh->ether_shost[4] = ((uint8_t *)&intf.ifr_hwaddr.sa_data)[4];
-  eh->ether_shost[5] = ((uint8_t *)&intf.ifr_hwaddr.sa_data)[5];
+  eh->ether_shost[0] = ((uint8_t *)&ifMAC.ifr_hwaddr.sa_data)[0];
+  eh->ether_shost[1] = ((uint8_t *)&ifMAC.ifr_hwaddr.sa_data)[1];
+  eh->ether_shost[2] = ((uint8_t *)&ifMAC.ifr_hwaddr.sa_data)[2];
+  eh->ether_shost[3] = ((uint8_t *)&ifMAC.ifr_hwaddr.sa_data)[3];
+  eh->ether_shost[4] = ((uint8_t *)&ifMAC.ifr_hwaddr.sa_data)[4];
+  eh->ether_shost[5] = ((uint8_t *)&ifMAC.ifr_hwaddr.sa_data)[5];
   eh->ether_dhost[0] = dstAddr[0];
   eh->ether_dhost[1] = dstAddr[1];
   eh->ether_dhost[2] = dstAddr[2];
@@ -132,8 +141,8 @@ int main(int argc, char *argv[]) {
   if (rbufSize < 0) perror("getrandom");
   else {
     printf("[Injection Information]\n");
-    printf("Packet Length  : %zu bytes", ehSize);
-    printf("Payload Length : %du bytes\n", rbufSize);
+    printf("Packet Length  : %zu bytes\n", BUF_SIZE);
+    printf("Payload Length : %u bytes\n", rbufSize);
     printf("Packet Count   : %llu pkts\n", cnt);
     printf("Injection Rate : %.3f pkts/s\n\n", injectionRate);
     fflush(stdout);
@@ -141,7 +150,7 @@ int main(int argc, char *argv[]) {
 
   /* Set socket address */
   struct sockaddr_ll sockAddr;
-  sockAddr.sll_ifindex = intf.ifr_ifindex;
+  sockAddr.sll_ifindex = ifIndex.ifr_ifindex;
   sockAddr.sll_family = PF_PACKET;
   sockAddr.sll_protocol = htons(ETH_P_IP);
   sockAddr.sll_hatype = ARPHRD_ETHER;
@@ -175,16 +184,18 @@ int main(int argc, char *argv[]) {
     }
     if (sendto(sock, sendBuf, BUF_SIZE, 0, saPointer, saSize) < 0)
     {
+      printf("\n[%d] %s\n", errno, strerror(errno));
       printf("X");
-      fflush(stdout);
     } else {
       printf(".");
-      if ((i + 1) % 1000 == 0) {
-        printf(" %lluk\n", (i + 1) / 1000);
-      }
-      fflush(stdout);
     }
+    if ((i + 1) % 1000 == 0) {
+      printf(" %lluk\n", (i + 1) / 1000);
+    }
+    fflush(stdout);
   }
+
+  printf("\nInjection Completed.\n");
 
   return 0;
 
