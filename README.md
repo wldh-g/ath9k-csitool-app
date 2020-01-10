@@ -1,8 +1,38 @@
+# BPI-R2 Atheros CSITool Apps
 
-The user-space applications for our Atheros-CSI-TOOL
+This repository contains modified csitool-apps for BPI-R2.
 
-Please visit our maintainance page http://pdcc.ntu.edu.sg/wands/Atheros/ for detailed infomration.
+This tool only supports ath9k-based CSI collection and you must install [modified kernel](https://github.com/wldh-g/BPI-R2-Atheros-CSITool) before run these apps.
 
-If you want more details on how to use this tool, please request the documentation http://pdcc.ntu.edu.sg/wands/Atheros/install/install_info.html.
+### How To Record CSI
 
-Change Log, we now support one transmitter multiple receivers at the same time. One packet transmitted can be simultaneously received by multiple receivers and the CSI will be calculated accordingly. More detail can be found from our maintainance page. http://pdcc.ntu.edu.sg/wands/Atheros/
+##### Transmitter
+
+Before contiune, install `hostapd`, `isc-dhcp-server`.
+
+```sh
+git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
+cd BPI-R2-Atheros-CSITool-App/injector
+./setup.sh
+make
+./inject help
+```
+
+You can configure MCS, channel at  `injector/hostapd.conf`.
+
+##### Receiver
+
+```sh
+git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
+cd BPI-R2-Atheros-CSITool-App/injector
+./setup.sh
+make
+./recv_csi [file name]
+```
+
+### How To Use Recorded CSI
+
+1. Compile `reader/read_csi.c`.
+2. Parse recorded data using `read_log_file.m`.
+
+For more information, look at [the project homepage](https://wands.sg/research/wifi/AtherosCSI/).
