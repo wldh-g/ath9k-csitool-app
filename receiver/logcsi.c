@@ -25,7 +25,7 @@
 
 #include "logcsi.h"
 
-#define BUFSIZE 4096
+#define BUFSIZE 16384
 
 bool recording = true;
 
@@ -36,6 +36,12 @@ void sigHandler(int signo)
 
 int main(int argc, char *argv[])
 {
+  /* check is got privileged */
+  if (geteuid() != 0) {
+    printf("Run this with the root privilege for correct socket descriptor.\n");
+    exit(0);
+  }
+
   /* check usage and open file */
   bool file_flag = true;
   FILE *log = NULL;
