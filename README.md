@@ -36,7 +36,7 @@ make
 ./logcsi [FILE NAME]
 ```
 
-You can omit `FILE NAME` for just checking its functionality.
+You can omit `FILE NAME` to make sure that it works.
 
 ### How To Use Recorded CSI
 
