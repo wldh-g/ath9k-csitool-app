@@ -46,10 +46,12 @@ int main(int argc, char *argv[])
 
   /* check usage and open file */
   bool file_flag = true;
+  bool verbose_flag = false;
+  char *file_name = NULL;
   FILE *log = NULL;
   if (1 == argc)
   {
-    file_flag = 0;
+    file_flag = false;
     printf("NOTE:\n");
     printf("  To log CSI values in file, use below.\n");
     printf("  => %s [FILE_NAME]\n\n", argv[0]);
@@ -58,15 +60,33 @@ int main(int argc, char *argv[])
     || (strncmp("help", argv[1], 4) == 0)
     || (strncmp("-h", argv[1], 2) == 0)
   ) {
-    printf("Usage  : %s [FILE_NAME]\n", argv[0]);
+    printf("Usage  : %s [-v|--verbose] [FILE_NAME]\n", argv[0]);
     printf("Example: %s\n", argv[0]);
+    printf("         Just see CSI log without saving them\n");
     printf("Example: %s test.dat\n", argv[0]);
+    printf("         Write CSI log to test.dat\n");
+    printf("Example: %s -v test.dat\n", argv[0]);
+    printf("         Write CSI log to test.dat with printing details\n");
     exit(0);
   } else {
-    log = fopen(argv[1], "w");
-    if (!log) {
-      printf("Failed to open %s for write!\n", argv[1]);
-      exit(errno);
+    file_name = argv[1];
+    if (
+      (strncmp("-v", argv[1], 2) == 0)
+      || (strncmp("--verbose", argv[1], 9) == 0)
+    ) {
+      verbose_flag = true;
+      if (argv[2] == NULL) {
+        file_flag = false;
+      } else {
+        file_name = argv[2];
+      }
+    }
+    if (file_flag) {
+      log = fopen(file_name, "w");
+      if (!log) {
+        printf("Failed to open %s for write!\n", file_name);
+        exit(errno);
+      }
     }
   }
 
@@ -80,12 +100,10 @@ int main(int argc, char *argv[])
   }
 
   /* get CSI values */
-  int read_result;
+  ssize_t read_size;
   unsigned char buf_addr[BUFSIZE + 2];
-  unsigned char data_buf[1500];
-  COMPLEX csi_matrix[3][3][114];
-  CSI *csi_status = (CSI *)malloc(sizeof(CSI));
-  size_t write_result;
+  CSISTAT *csi_status = (CSISTAT *)malloc(sizeof(CSISTAT));
+  size_t write_size;
 
   printf("Receiving data... Press Ctrl+C to quit.\n");
   signal(SIGINT, sigHandler);
@@ -93,19 +111,25 @@ int main(int argc, char *argv[])
   while (recording)
   {
     /* keep listening to the kernel and waiting for the csi report */
-    read_result = read_csi_buf(&buf_addr[2], csi_device, BUFSIZE);
+    read_size = read_csi_buf(&buf_addr[2], csi_device, BUFSIZE);
 
-    if (read_result)
+    if (read_size)
     {
       log_recv_count += 1;
 
       /* fill the status struct with information about the rx packet */
-      record_status(&buf_addr[2], read_result, csi_status);
+      record_status(&buf_addr[2], read_size, csi_status);
 
-      /* fill the payload buffer with the payload
-       * fill the CSI matrix with the extracted CSI value
-       */
-      record_csi_payload(&buf_addr[2], csi_status, data_buf, csi_matrix);
+      if (!file_flag || verbose_flag) {
+        fprintf(
+          stdout,
+          "%d: buf(%d B) payload(%d B) csi(%d B) rate(0x%02x) nt(%d) nr(%d) timestamp(%lld)",
+          log_recv_count,
+          csi_status->buf_len, csi_status->payload_len, csi_status->csi_len,
+          csi_status->rate, csi_status->nt, csi_status->nr,
+          csi_status->timestamp
+        );
+      }
 
       /* log the received data */
       if (file_flag)
@@ -113,12 +137,14 @@ int main(int argc, char *argv[])
         buf_addr[0] = csi_status->buf_len & 0xFF;
         buf_addr[1] = csi_status->buf_len >> 8;
 
+        if (verbose_flag) fprintf(stdout, " -> ");
+
         if (csi_status->nt == 0) {
           fprintf(stdout, "C");
         } else {
-          write_result = fwrite(buf_addr, 1, csi_status->buf_len + 2, log);
+          write_size = fwrite(buf_addr, 1, csi_status->buf_len + 2, log);
 
-          if (1 > write_result) {
+          if (1 > write_size) {
             fprintf(stdout, "W");
             perror("fwrite");
             recording = 0;
@@ -127,21 +153,16 @@ int main(int argc, char *argv[])
             log_write_count += 1;
           }
         }
-      } else {
-        fprintf(
-          stdout,
-          "%d: rate(0x%02x) payload_len(%d) buf_len(%d) tx_cnt(%d) rx_cnt(%d)\n",
-          log_recv_count, csi_status->rate, csi_status->payload_len,
-          csi_status->buf_len, csi_status->nt, csi_status->nr
-        );
       }
+
+      if (!file_flag || verbose_flag) fprintf(stdout, "\n");
     }
   }
 
   /* clean */
   printf("\nReceived %d packets.\n", log_recv_count);
   if (file_flag) {
-    printf("Wrote %d packets to \"%s\".\n", log_write_count, argv[1]);
+    printf("Wrote %d packets to \"%s\".\n", log_write_count, file_name);
     fclose(log);
   }
   close_csi_device(csi_device);

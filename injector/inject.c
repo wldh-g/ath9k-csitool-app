@@ -37,7 +37,6 @@
 #include <time.h>
 #include <unistd.h>
 
-/* Define the defult destination MAC address */
 #define DEFAULT_DEST_MAC0 0x12
 #define DEFAULT_DEST_MAC1 0x34
 #define DEFAULT_DEST_MAC2 0x56
@@ -45,8 +44,9 @@
 #define DEFAULT_DEST_MAC4 0x90
 #define DEFAULT_DEST_MAC5 0xFF
 
-#define INTERFACE_NAME "wlp1s0"
-#define BUF_SIZE 100
+#define DEFAULT_INTERFACE_NAME "wlp1s0"
+#define DEFAULT_PACKET_SIZE 100
+#define DEFAULT_SEND_DELAY 10000
 
 int main(int argc, char *argv[]) {
 
@@ -63,38 +63,97 @@ int main(int argc, char *argv[]) {
     || (argc >= 2 && strncmp("-h", argv[1], 2) == 0)
     || (argc >= 2 && strncmp("--help", argv[1], 6) == 0)
   ) {
-    printf("Usage  : %s PACKETS_TO_SEND SEND_DELAY [MAC_ADDRESS]\n", argv[0]);
-    printf("Example: %s 100 10000 12:34:56:78:90:FF\n", argv[0]);
-    printf("Example: %s 100 10000\n\n", argv[0]);
-    printf("PACKETS_TO_SEND\n  The number of packets to inject. Set this zero for infinite injection.\n\n");
-    printf("SEND_DELAY\n  Injection interval in microseconds. Set this zero for no-delay injection.\n\n");
-    printf("NOTE: The length of packet is hard-coded (BUF_SIZE).\n");
+    printf("Usage  : %s [...OPTIONS] PACKETS_TO_SEND\n\n", argv[0]);
+    printf("OPTIONS\n");
+    printf("  -d SEND_DELAY    Injection interval in microseconds. Set this zero for no-\n");
+    printf("                   delay injection. (Default: %d)\n", DEFAULT_SEND_DELAY);
+    printf("  -i INTERFACE     The name of network interface that the injector will use.\n");
+    printf("                   (Default: %s)\n", DEFAULT_INTERFACE_NAME);
+    printf("  -s PACKET_SIZE   The size of packets in bytes (<=1024). (Default: %d)\n", DEFAULT_PACKET_SIZE);
+    printf("  -a ADDRESS       The MAC address of the injection target client station.\n");
+    printf("                   (Default: %2x:%2x:%2x:%2x:%2x:%2x)\n",
+      DEFAULT_DEST_MAC0, DEFAULT_DEST_MAC1, DEFAULT_DEST_MAC2,
+      DEFAULT_DEST_MAC3, DEFAULT_DEST_MAC4, DEFAULT_DEST_MAC5);
+    printf("  -h               This help message.\n\n");
+    printf("PACKETS_TO_SEND\n  The number of packets to inject. Set this zero for infinite injection.\n");
     exit(0);
   }
 
   char* readStrEnd;
+  unsigned long long cnt = 0;
+  bool infCnt = cnt == 0;
+  unsigned long delay = DEFAULT_SEND_DELAY;
+  bool delayExist = delay > 0;
+  char* interface = DEFAULT_INTERFACE_NAME;
+  unsigned short pktSize = DEFAULT_PACKET_SIZE;
+  char dstAddr[6] = {
+    DEFAULT_DEST_MAC0, DEFAULT_DEST_MAC1, DEFAULT_DEST_MAC2,
+    DEFAULT_DEST_MAC3, DEFAULT_DEST_MAC4, DEFAULT_DEST_MAC5
+  };
 
-  /* Get the number of packets to send */
-  const unsigned long long cnt = strtoull(argv[1], &readStrEnd, 10);
-  const bool infCnt = cnt == 0;
+  /* Get arguments */
+  unsigned int argi;
+  char opti = 0;
+  bool cntSet = false;
+  for (argi = 1; argi < argc; argi += 1) {
+    if (opti != 0) {
+      switch (opti) {
+        case 'd':
+          delay = strtoul(argv[argi], &readStrEnd, 10);
+          break;
+        case 'i':
+          interface = argv[argi];
+          break;
+        case 's':
+          pktSize = (unsigned short) strtoul(argv[argi], &readStrEnd, 10);
+          break;
+        case 'a':
+          sscanf(argv[argi], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+            &dstAddr[0], &dstAddr[1], &dstAddr[2],
+            &dstAddr[3], &dstAddr[4], &dstAddr[5]);
+          break;
+        default:
+          printf("Unknown option error: -%c\n", opti);
+          exit(1);
+          break;
+      }
+      opti = 0;
+    } else if (argv[argi][0] == '-') {
+      if (strlen(argv[argi]) < 2) {
+        printf("Invalid option prefix: -\n");
+        exit(1);
+      } else {
+        switch (argv[argi][1]) {
+          case 'd':
+          case 'i':
+          case 's':
+          case 'a':
+            opti = argv[argi][1];
+            break;
+          default:
+            printf("Invalid option prefix: -%c\n", argv[argi][1]);
+            exit(1);
+            break;
+        }
+      }
+    } else {
+      cnt = strtoull(argv[argi], &readStrEnd, 10);
+      cntSet = true;
+    }
+  }
 
-  /* Get packet injection delay */
-  const unsigned long delay = strtoul(argv[2], &readStrEnd, 10);
-  const bool delayExist = delay > 0;
-
-  /* Get destination address */
-  char dstAddr[6] = { 0 };
-  if (argc > 3) {
-    sscanf(argv[3], "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-      &dstAddr[0], &dstAddr[1], &dstAddr[2],
-      &dstAddr[3], &dstAddr[4], &dstAddr[5]);
+  if (opti != 0) {
+    printf("Option value was not given: -%c\n", opti);
+    exit(1);
+  } else if (cntSet == false) {
+    printf("Packets to send are not set.\n");
+    exit(1);
+  } else if (pktSize > 1024) {
+    printf("Packet size cannot be more than 1024.\n");
+    exit(1);
   } else {
-    dstAddr[0] = DEFAULT_DEST_MAC0;
-    dstAddr[1] = DEFAULT_DEST_MAC1;
-    dstAddr[2] = DEFAULT_DEST_MAC2;
-    dstAddr[3] = DEFAULT_DEST_MAC3;
-    dstAddr[4] = DEFAULT_DEST_MAC4;
-    dstAddr[5] = DEFAULT_DEST_MAC5;
+    infCnt = cnt == 0;
+    delayExist = delay > 0;
   }
 
   /* Open RAW socket to send on */
@@ -106,15 +165,15 @@ int main(int argc, char *argv[]) {
   /* Get the index & mac of the interface to send on */
   struct ifreq ifIndex, ifMAC;
   memset(&ifIndex, 0, sizeof(struct ifreq));
-  strncpy(ifIndex.ifr_name, INTERFACE_NAME, IFNAMSIZ - 1);
+  strncpy(ifIndex.ifr_name, interface, IFNAMSIZ - 1);
   if (ioctl(sock, SIOCGIFINDEX, &ifIndex) < 0) perror("SIOCGIFINDEX");
   memset(&ifMAC, 0, sizeof(struct ifreq));
-  strncpy(ifMAC.ifr_name, INTERFACE_NAME, IFNAMSIZ - 1);
+  strncpy(ifMAC.ifr_name, interface, IFNAMSIZ - 1);
   if (ioctl(sock, SIOCGIFHWADDR, &ifMAC) < 0) perror("SIOCGIFHWADDR");
 
   /* Initialize buffer */
-  char sendBuf[BUF_SIZE];
-  memset(sendBuf, 0, BUF_SIZE);
+  char sendBuf[pktSize];
+  memset(sendBuf, 0, pktSize);
 
   /* Construct the Ethernet header */
   struct ether_header *eh = (struct ether_header *) sendBuf;
@@ -134,16 +193,24 @@ int main(int argc, char *argv[]) {
 
   /* Set packet payload */
   const size_t ehSize = sizeof(struct ether_header);
-  const size_t plSize = BUF_SIZE - ehSize;
+  const size_t plSize = pktSize - ehSize;
   const unsigned int rbufSize = getrandom(&sendBuf[ehSize], plSize, 0);
   const double injectionRate = (double) 1000000 / (double) delay;
   if (rbufSize < 0) perror("getrandom");
   else {
     printf("[Injection Information]\n");
-    printf("Packet Length  : %zu bytes\n", BUF_SIZE);
-    printf("Payload Length : %u bytes\n", rbufSize);
-    printf("Packet Count   : %llu pkts\n", cnt);
-    printf("Injection Rate : %.3f pkts/s\n\n", injectionRate);
+    printf("Interface       : %s\n", interface);
+    printf("Packet Length   : %zu bytes\n", pktSize);
+    printf("Payload Length  : %u bytes\n", rbufSize);
+    if (infCnt) {
+      printf("Packet Count    : infinite pkts\n");
+    } else {
+      printf("Packet Count    : %llu pkts\n", cnt);
+    }
+    printf("Injection Delay : %ld us\n", delay);
+    printf("Injection Rate  : %.5f pkts/s\n", injectionRate);
+    printf("Target          : %2x:%2x:%2x:%2x:%2x:%2x\n\n",
+      dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
     fflush(stdout);
   }
 
@@ -181,7 +248,7 @@ int main(int argc, char *argv[]) {
              );
       if (diff > 0 && diff < delay) usleep(diff);
     }
-    if (sendto(sock, sendBuf, BUF_SIZE, 0, saPointer, saSize) < 0)
+    if (sendto(sock, sendBuf, pktSize, 0, saPointer, saSize) < 0)
     {
       printf("\n[%d] %s\n", errno, strerror(errno));
       printf("X");
