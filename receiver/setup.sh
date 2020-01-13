@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/sudo /bin/bash
 
 ip link set wlp1s0 down
 echo "Your MAC address of wlp1s0 temporarily changed to 12:34:56:78:90:ff."
