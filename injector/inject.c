@@ -46,7 +46,7 @@
 #define DEFAULT_DEST_MAC5 0xFF
 
 #define INTERFACE_NAME "wlp1s0"
-#define BUF_SIZE 1024
+#define BUF_SIZE 100
 
 int main(int argc, char *argv[]) {
 

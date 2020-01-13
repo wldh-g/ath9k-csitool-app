@@ -25,9 +25,11 @@
 
 #include "logcsi.h"
 
-#define BUFSIZE 16384
+#define BUFSIZE 65536
 
 bool recording = true;
+int log_recv_count = 0;
+int log_write_count = 0;
 
 void sigHandler(int signo)
 {
@@ -79,13 +81,11 @@ int main(int argc, char *argv[])
 
   /* get CSI values */
   int read_result;
-  int log_count = 0;
   unsigned char buf_addr[BUFSIZE + 2];
   unsigned char data_buf[1500];
   COMPLEX csi_matrix[3][3][114];
   CSI *csi_status = (CSI *)malloc(sizeof(CSI));
   size_t write_result;
-  u_int16_t buf_len;
 
   printf("Receiving data... Press Ctrl+C to quit.\n");
   signal(SIGINT, sigHandler);
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
     if (read_result)
     {
-      log_count += 1;
+      log_recv_count += 1;
 
       /* fill the status struct with information about the rx packet */
       record_status(&buf_addr[2], read_result, csi_status);
@@ -106,35 +106,47 @@ int main(int argc, char *argv[])
        * fill the CSI matrix with the extracted CSI value
        */
       record_csi_payload(&buf_addr[2], csi_status, data_buf, csi_matrix);
-      fprintf(
-        stdout,
-        "%d: rate(0x%02x) payload_len(%d) tx_cnt(%d) rx_cnt(%d) -> ",
-        log_count, csi_status->rate, csi_status->payload_len,
-        csi_status->nt, csi_status->nr
-      );
 
       /* log the received data */
       if (file_flag)
       {
         buf_addr[0] = csi_status->buf_len & 0xFF;
         buf_addr[1] = csi_status->buf_len >> 8;
-        write_result = fwrite(buf_addr, 1, csi_status->buf_len + 2, log);
 
-        if (1 > write_result) {
-          fprintf(stdout, "ERROR!\n");
-          perror("fwrite");
-          exit(1);
+        if (csi_status->nt == 0) {
+          fprintf(stdout, "C");
         } else {
-          fprintf(stdout, "OK!\n");
+          write_result = fwrite(buf_addr, 1, csi_status->buf_len + 2, log);
+
+          if (1 > write_result) {
+            fprintf(stdout, "W");
+            perror("fwrite");
+            recording = 0;
+          } else {
+            fprintf(stdout, ".");
+            log_write_count += 1;
+          }
         }
+      } else {
+        fprintf(
+          stdout,
+          "%d: rate(0x%02x) payload_len(%d) tx_cnt(%d) rx_cnt(%d)\n",
+          log_recv_count, csi_status->rate, csi_status->payload_len,
+          csi_status->nt, csi_status->nr
+        );
       }
     }
   }
 
   /* clean */
-  if (file_flag) fclose(log);
+  printf("Received %d packets.\n", log_recv_count);
+  if (file_flag) {
+    printf("Wrote %d packets to \"%s\".\n", log_write_count, argv[1]);
+    fclose(log);
+  }
   close_csi_device(csi_device);
   free(csi_status);
 
   return 0;
 }
+
