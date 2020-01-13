@@ -15,7 +15,7 @@ git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
 cd BPI-R2-Atheros-CSITool-App/injector
 make
 ./load.sh
-./inject help
+sudo ./inject help
 ```
 
 You can configure MCS, channel at  `injector/hostapd.conf`.
@@ -33,7 +33,7 @@ git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
 cd BPI-R2-Atheros-CSITool-App/receiver
 make
 ./setup.sh
-./logcsi [FILE NAME]
+sudo ./logcsi [FILE NAME]
 ```
 
 You can omit `FILE NAME` to make sure that it works.
