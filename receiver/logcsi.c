@@ -130,16 +130,16 @@ int main(int argc, char *argv[])
       } else {
         fprintf(
           stdout,
-          "%d: rate(0x%02x) payload_len(%d) tx_cnt(%d) rx_cnt(%d)\n",
+          "%d: rate(0x%02x) payload_len(%d) buf_len(%d) tx_cnt(%d) rx_cnt(%d)\n",
           log_recv_count, csi_status->rate, csi_status->payload_len,
-          csi_status->nt, csi_status->nr
+          csi_status->buf_len, csi_status->nt, csi_status->nr
         );
       }
     }
   }
 
   /* clean */
-  printf("Received %d packets.\n", log_recv_count);
+  printf("\nReceived %d packets.\n", log_recv_count);
   if (file_flag) {
     printf("Wrote %d packets to \"%s\".\n", log_write_count, argv[1]);
     fclose(log);
