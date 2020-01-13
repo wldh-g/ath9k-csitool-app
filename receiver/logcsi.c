@@ -51,11 +51,20 @@ int main(int argc, char *argv[])
     printf("NOTE:\n");
     printf("  To log CSI values in file, use below.\n");
     printf("  => %s [FILE_NAME]\n\n", argv[0]);
+  } else if (
+    (strncmp("--help", argv[1], 6) == 0)
+    || (strncmp("help", argv[1], 4) == 0)
+    || (strncmp("-h", argv[1], 2) == 0)
+  ) {
+    printf("Usage  : %s [FILE_NAME]\n", argv[0]);
+    printf("Example: %s\n", argv[0]);
+    printf("Example: %s test.dat\n", argv[0]);
+    exit(0);
   } else {
     log = fopen(argv[1], "w");
     if (!log) {
       printf("Failed to open %s for write!\n", argv[1]);
-      exit(0);
+      exit(errno);
     }
   }
 
@@ -71,39 +80,53 @@ int main(int argc, char *argv[])
   /* get CSI values */
   int read_result;
   int log_count = 0;
-  u_int16_t buf_len;
-  unsigned char buf_addr[BUFSIZE];
+  unsigned char buf_addr[BUFSIZE + 2];
   unsigned char data_buf[1500];
   COMPLEX csi_matrix[3][3][114];
   CSI *csi_status = (CSI *)malloc(sizeof(CSI));
+  size_t write_result;
+  u_int16_t buf_len;
 
   printf("Receiving data... Press Ctrl+C to quit.\n");
   signal(SIGINT, sigHandler);
+  setbuf(stdout, NULL);
   while (recording)
   {
     /* keep listening to the kernel and waiting for the csi report */
-    read_result = read_csi_buf(buf_addr, csi_device, BUFSIZE);
+    read_result = read_csi_buf(&buf_addr[2], csi_device, BUFSIZE);
 
     if (read_result)
     {
       log_count += 1;
 
       /* fill the status struct with information about the rx packet */
-      record_status(buf_addr, read_result, csi_status);
+      record_status(&buf_addr[2], read_result, csi_status);
 
       /* fill the payload buffer with the payload
        * fill the CSI matrix with the extracted CSI value
        */
-      record_csi_payload(buf_addr, csi_status, data_buf, csi_matrix);
-      printf("%d: rate(0x%02x) payload_len(%d)\n",
-        log_count, csi_status->rate, csi_status->payload_len);
+      record_csi_payload(&buf_addr[2], csi_status, data_buf, csi_matrix);
+      fprintf(
+        stdout,
+        "%d: rate(0x%02x) payload_len(%d) tx_cnt(%d) rx_cnt(%d) -> ",
+        log_count, csi_status->rate, csi_status->payload_len,
+        csi_status->nt, csi_status->nr
+      );
 
       /* log the received data */
       if (file_flag)
       {
-        buf_len = csi_status->buf_len;
-        fwrite(&buf_len, 1, 2, log);
-        fwrite(buf_addr, 1, buf_len, log);
+        buf_addr[0] = csi_status->buf_len & 0xFF;
+        buf_addr[1] = csi_status->buf_len >> 8;
+        write_result = fwrite(buf_addr, 1, csi_status->buf_len + 2, log);
+
+        if (1 > write_result) {
+          fprintf(stdout, "ERROR!\n");
+          perror("fwrite");
+          exit(1);
+        } else {
+          fprintf(stdout, "OK!\n");
+        }
       }
     }
   }
