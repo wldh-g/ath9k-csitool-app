@@ -74,6 +74,8 @@ int main(int argc, char *argv[]) {
     printf("                   (Default: %2x:%2x:%2x:%2x:%2x:%2x)\n",
       DEFAULT_DEST_MAC0, DEFAULT_DEST_MAC1, DEFAULT_DEST_MAC2,
       DEFAULT_DEST_MAC3, DEFAULT_DEST_MAC4, DEFAULT_DEST_MAC5);
+    printf("  -c               0xCC mode. If set, all payloads are filled with 0xC.\n");
+    printf("                   (Default: random)\n");
     printf("  -h               This help message.\n\n");
     printf("PACKETS_TO_SEND\n  The number of packets to inject. Set this zero for infinite injection.\n");
     exit(0);
@@ -90,6 +92,7 @@ int main(int argc, char *argv[]) {
     DEFAULT_DEST_MAC0, DEFAULT_DEST_MAC1, DEFAULT_DEST_MAC2,
     DEFAULT_DEST_MAC3, DEFAULT_DEST_MAC4, DEFAULT_DEST_MAC5
   };
+  bool cMode = false;
 
   /* Get arguments */
   unsigned int argi;
@@ -129,6 +132,9 @@ int main(int argc, char *argv[]) {
           case 's':
           case 'a':
             opti = argv[argi][1];
+            break;
+          case 'c':
+            cMode = true;
             break;
           default:
             printf("Invalid option prefix: -%c\n", argv[argi][1]);
@@ -194,29 +200,38 @@ int main(int argc, char *argv[]) {
   /* Set packet payload */
   const size_t ehSize = sizeof(struct ether_header);
   const size_t plSize = pktSize - ehSize;
-  const unsigned int rbufSize = getrandom(&sendBuf[ehSize], plSize, 0);
-  const double injectionRate = delay == 0 ? 0 : ((double) 1000000 / delay);
-  if (rbufSize < 0) perror("getrandom");
-  else {
-    printf("[Injection Information]\n");
-    printf("Interface       : %s\n", interface);
-    printf("Packet Length   : %zu bytes\n", pktSize);
-    printf("Payload Length  : %u bytes\n", rbufSize);
-    if (infCnt) {
-      printf("Packet Count    : infinite pkts\n");
-    } else {
-      printf("Packet Count    : %llu pkts\n", cnt);
+  unsigned int rbufSize = plSize;
+  if (!cMode) {
+    rbufSize = getrandom(&sendBuf[ehSize], plSize, 0);
+    if (rbufSize < 0) {
+      perror("getrandom");
+      exit(1);
     }
-    printf("Injection Delay : %ld us\n", delay);
-    if (delay == 0) {
-      printf("Injection Rate  : unknown\n");
-    } else {
-      printf("Injection Rate  : %.5f pkts/s\n", injectionRate);
-    }
-    printf("Target          : %2x:%2x:%2x:%2x:%2x:%2x\n\n",
-      dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
-    fflush(stdout);
+  } else {
+    memset(&sendBuf[ehSize], (char) 0xCC, plSize);
   }
+
+  /* Display Injection Information */
+  const double injectionRate = delay == 0 ? 0 : ((double) 1000000 / delay);
+  printf("[Injection Information]\n");
+  printf("Interface       : %s\n", interface);
+  printf("Packet Content  : %s\n", cMode ? "ccc..." : "random");
+  printf("Packet Length   : %zu bytes\n", pktSize);
+  printf("Payload Length  : %u bytes\n", rbufSize);
+  if (infCnt) {
+    printf("Packet Count    : infinite pkts\n");
+  } else {
+    printf("Packet Count    : %llu pkts\n", cnt);
+  }
+  printf("Injection Delay : %ld us\n", delay);
+  if (delay == 0) {
+    printf("Injection Rate  : unknown\n");
+  } else {
+    printf("Injection Rate  : %.5f pkts/s\n", injectionRate);
+  }
+  printf("Target          : %2x:%2x:%2x:%2x:%2x:%2x\n\n",
+    dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
+  fflush(stdout);
 
   /* Set socket address */
   struct sockaddr_ll sockAddr;

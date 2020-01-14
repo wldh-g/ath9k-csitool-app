@@ -123,12 +123,11 @@ int main(int argc, char *argv[])
       if (!file_flag || verbose_flag) {
         fprintf(
           stdout,
-          "%d: buf(%d B) payload(%d B) csi(%d B) rate(0x%02x) nta(%d) nt(%d) nr(%d) timestamp(%lld)",
-          log_recv_count,
-          csi_status->buf_len, csi_status->payload_len, csi_status->csi_len,
-          csi_status->rate,
+          "%d (%d B): payload(%d B) csi(%d B) rate(0x%02x) nta(%d) nt(%d) nr(%d) noise(%d) timestamp(%lld)",
+          log_recv_count, csi_status->buf_len,
+          csi_status->payload_len, csi_status->csi_len, csi_status->rate,
           csi_status->nt_actual, csi_status->nt, csi_status->nr,
-          csi_status->timestamp
+          csi_status->noise, csi_status->timestamp
         );
       }
 
