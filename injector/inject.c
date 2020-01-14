@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     printf("                   (Default: %s)\n", DEFAULT_INTERFACE_NAME);
     printf("  -s PACKET_SIZE   The size of packets in bytes (<=1024). (Default: %d)\n", DEFAULT_PACKET_SIZE);
     printf("  -a ADDRESS       The MAC address of the injection target client station.\n");
-    printf("                   (Default: %2x:%2x:%2x:%2x:%2x:%2x)\n",
+    printf("                   (Default: %02x:%02x:%02x:%02x:%02x:%02x)\n",
       DEFAULT_DEST_MAC0, DEFAULT_DEST_MAC1, DEFAULT_DEST_MAC2,
       DEFAULT_DEST_MAC3, DEFAULT_DEST_MAC4, DEFAULT_DEST_MAC5);
     printf("  -c               0xCC mode. If set, all payloads are filled with 0xC.\n");
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
   } else {
     printf("Injection Rate  : %.5f pkts/s\n", injectionRate);
   }
-  printf("Target          : %2x:%2x:%2x:%2x:%2x:%2x\n\n",
+  printf("Target          : %02x:%02x:%02x:%02x:%02x:%02x\n\n",
     dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
   fflush(stdout);
 
