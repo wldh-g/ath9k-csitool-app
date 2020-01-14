@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
   const size_t ehSize = sizeof(struct ether_header);
   const size_t plSize = pktSize - ehSize;
   const unsigned int rbufSize = getrandom(&sendBuf[ehSize], plSize, 0);
-  const double injectionRate = (double) 1000000 / (double) delay;
+  const double injectionRate = delay == 0 ? 0 : ((double) 1000000 / delay);
   if (rbufSize < 0) perror("getrandom");
   else {
     printf("[Injection Information]\n");
@@ -208,7 +208,11 @@ int main(int argc, char *argv[]) {
       printf("Packet Count    : %llu pkts\n", cnt);
     }
     printf("Injection Delay : %ld us\n", delay);
-    printf("Injection Rate  : %.5f pkts/s\n", injectionRate);
+    if (delay == 0) {
+      printf("Injection Rate  : unknown\n");
+    } else {
+      printf("Injection Rate  : %.5f pkts/s\n", injectionRate);
+    }
     printf("Target          : %2x:%2x:%2x:%2x:%2x:%2x\n\n",
       dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
     fflush(stdout);
