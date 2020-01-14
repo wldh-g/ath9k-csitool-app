@@ -4,7 +4,7 @@ This repository contains modified csitool-apps for BPI-R2.
 
 This tool only supports ath9k-based CSI collection and you must install [modified kernel](https://github.com/wldh-g/BPI-R2-Atheros-CSITool) before run these apps.
 
-### How To Record CSI
+### How To Record Packets
 
 ##### Transmitter
 
@@ -15,7 +15,7 @@ git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
 cd BPI-R2-Atheros-CSITool-App/injector
 make
 ./load.sh
-sudo ./inject help
+sudo ./inject -h
 ```
 
 You can configure MCS, channel at  `injector/hostapd.conf`.
@@ -33,15 +33,13 @@ git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
 cd BPI-R2-Atheros-CSITool-App/receiver
 make
 ./setup.sh
-sudo ./logcsi [FILE NAME]
+sudo ./logcsi -h
 ```
 
-You can omit `FILE NAME` to make sure that it works.
+The MAC address of `wlp1s0` will be changed to `12:34:56:78:90:ff` after execute `setup.sh`.
 
-### How To Use Recorded CSI
+### How To Use Recorded Logs
 
-1. Compile `reader/read_csi.c`.
-2. Parse recorded data using `read_log_file.m`.
+Parse recorded data using `log_reader/read_log.m` in MATLAB.
 
 For more information, look at [the project homepage](https://wands.sg/research/wifi/AtherosCSI/).
-

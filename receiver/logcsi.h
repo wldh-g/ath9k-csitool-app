@@ -31,8 +31,9 @@ typedef struct
   u_int8_t bandwidth;    // channel bandwidth (0->20MHz, 1->40MHz)
 
   u_int8_t rate;         // transmission rate
-  u_int8_t nr;           // number of receiving antenna
-  u_int8_t nt;           // number of transmitting antenna
+  u_int8_t nr;           // number of receiving antennas
+  u_int8_t nt;           // number of transmitting antennas
+  u_int8_t nt_actual;    // number of transmitting antennas (from mask)
   u_int8_t nc;           // number of tones (subcarriers)
   u_int8_t noise;        // noise floor (to be updated)
 
@@ -106,8 +107,8 @@ void record_status(unsigned char *buf_addr, ssize_t read_size, CSISTAT *csi_stat
         ((buf_addr[read_size - 2] << 8) & 0xff00)
       | (buf_addr[read_size - 1]        & 0x00ff);
     csi_status->payload_len =
-        ((buf_addr[23] << 8) & 0xff00)
-      | ((buf_addr[24])      & 0x00ff);
+        ((buf_addr[24] << 8) & 0xff00)
+      | ((buf_addr[25])      & 0x00ff);
   }
   else
   {
@@ -130,21 +131,21 @@ void record_status(unsigned char *buf_addr, ssize_t read_size, CSISTAT *csi_stat
         ((buf_addr[read_size - 1] << 8) & 0xff00)
       | (buf_addr[read_size - 2]        & 0x00ff);
     csi_status->payload_len =
-        ((buf_addr[24] << 8) & 0xff00)
-      | (buf_addr[23]        & 0x00ff);
+        ((buf_addr[25] << 8) & 0xff00)
+      | (buf_addr[24]        & 0x00ff);
   }
 
   csi_status->phyerr = buf_addr[12];
   csi_status->noise = buf_addr[13];
-  csi_status->rate = buf_addr[14];
+  csi_status->rate = buf_addr[14] & 0x7f; // Remove HT flag to see only MCS
   csi_status->bandwidth = buf_addr[15];
   csi_status->nc = buf_addr[16];
   csi_status->nr = buf_addr[17];
   csi_status->nt = buf_addr[18];
+  csi_status->nt_actual = buf_addr[19];
 
-  csi_status->rssi = buf_addr[19];
-  csi_status->rssi_0 = buf_addr[20];
-  csi_status->rssi_1 = buf_addr[21];
-  csi_status->rssi_2 = buf_addr[22];
+  csi_status->rssi = buf_addr[20];
+  csi_status->rssi_0 = buf_addr[21];
+  csi_status->rssi_1 = buf_addr[22];
+  csi_status->rssi_2 = buf_addr[23];
 }
-

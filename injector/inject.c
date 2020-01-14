@@ -7,7 +7,7 @@
  *
  *         Author:  Yaxiong Xie
  *          Email:  <xieyaxiongfly@gmail.com>
- *   Organization:  WANS group @ Nanyang Technological University
+ *   Organization:  WANDS group @ Nanyang Technological University
  *
  *  Refactored by:  Jio Gim <jio@wldh.org>
  *

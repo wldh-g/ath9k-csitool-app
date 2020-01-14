@@ -7,23 +7,18 @@
  *
  *         Author:  Yaxiong Xie
  *          Email:  <xieyaxiongfly@gmail.com>
- *   Organization:  WNADS group @ Nanyang Technological University
+ *   Organization:  WANDS group @ Nanyang Technological University
  *
  *   Copyright (c)  WANDS group @ Nanyang Technological University
  * =============================================================================
  */
+
 #include "mex.h"
 
 #define TONE_40M 114
 #define BITS_PER_BYTE 8
-#define BITS_PER_COMPLEX_SYMBOL (2 * BITS_PER_SYMBOL)
 #define BITS_PER_SYMBOL 10
-
-typedef struct
-{
-  int real;
-  int imag;
-} COMPLEX;
+#define BITS_PER_COMPLEX_SYMBOL (2 * BITS_PER_SYMBOL)
 
 int signbit_convert(int data, int maxbit)
 {
@@ -33,6 +28,7 @@ int signbit_convert(int data, int maxbit)
   }
   return data;
 }
+
 void mexFunction(int nlhs, mxArray *plhs[],
                  int nrhs, const mxArray *prhs[])
 {
@@ -52,28 +48,29 @@ void mexFunction(int nlhs, mxArray *plhs[],
   /*  check for proper number of arguments */
   if (nrhs != 4)
   {
-    mexErrMsgIdAndTxt("MIMOToolbox:read_csi_new:nrhs", "Four input required.");
+    mexErrMsgIdAndTxt("MIMOToolbox:read_csi:nrhs", "Four input required.");
   }
   if (nlhs != 1)
   {
-    mexErrMsgIdAndTxt("MIMOToolbox:read_csi_new:nlhs", "One output required.");
+    mexErrMsgIdAndTxt("MIMOToolbox:read_csi:nlhs", "One output required.");
   }
+
   /*  make sure the input argument is a char array */
   if (!mxIsClass(prhs[0], "uint8"))
   {
-    mexErrMsgIdAndTxt("MIMOToolbox:read_csi_new:notBytes",
-      "Input must be a char array");
+    mexErrMsgIdAndTxt("MIMOToolbox:read_csi:notBytes",
+                      "Input must be a char array");
   }
 
   local_h = mxGetData(prhs[0]);
 
-  nr_p = mxGetPr(prhs[1]);
+  nr_p = (unsigned int *)mxGetPr(prhs[1]);
   nr = *nr_p;
 
-  nc_p = mxGetPr(prhs[2]);
+  nc_p = (unsigned int *)mxGetPr(prhs[2]);
   nc = *nc_p;
 
-  num_tones_p = mxGetPr(prhs[3]);
+  num_tones_p = (unsigned int *)mxGetPr(prhs[3]);
   num_tones = *num_tones_p;
 
   const mwSize size[] = {nr, nc, num_tones};
@@ -134,5 +131,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
       }
     }
   }
+
+  /* [rx, tx, subcarriers] */
   plhs[0] = csi;
 }
