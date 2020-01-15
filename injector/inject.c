@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
       DEFAULT_DEST_MAC3, DEFAULT_DEST_MAC4, DEFAULT_DEST_MAC5);
     printf("  -c               0xCC mode. If set, all payloads are filled with 0xC.\n");
     printf("                   (Default: random)\n");
+    printf("  -v               View ethernet packet contents before injection.\n");
     printf("  -h               This help message.\n\n");
     printf("PACKETS_TO_SEND\n  The number of packets to inject. Set this zero for infinite injection.\n");
     exit(0);
@@ -93,6 +94,7 @@ int main(int argc, char *argv[]) {
     DEFAULT_DEST_MAC3, DEFAULT_DEST_MAC4, DEFAULT_DEST_MAC5
   };
   bool cMode = false;
+  bool vMode = false;
 
   /* Get arguments */
   unsigned int argi;
@@ -135,6 +137,9 @@ int main(int argc, char *argv[]) {
             break;
           case 'c':
             cMode = true;
+            break;
+          case 'v':
+            vMode = true;
             break;
           default:
             printf("Invalid option prefix: -%c\n", argv[argi][1]);
@@ -214,23 +219,32 @@ int main(int argc, char *argv[]) {
   /* Display Injection Information */
   const double injectionRate = delay == 0 ? 0 : ((double) 1000000 / delay);
   printf("[Injection Information]\n");
-  printf("Interface       : %s\n", interface);
-  printf("Packet Content  : %s\n", cMode ? "ccc..." : "random");
-  printf("Packet Length   : %zu bytes\n", pktSize);
-  printf("Payload Length  : %u bytes\n", rbufSize);
+  printf("Interface         : %s\n", interface);
+  printf("Payload Generator : %s\n", cMode ? "0xCC" : "random");
+  printf("Payload Length    : %u bytes\n", rbufSize);
+  printf("Packet Length     : %zu bytes\n", pktSize);
   if (infCnt) {
-    printf("Packet Count    : infinite pkts\n");
+    printf("Packet Count      : infinite pkts\n");
   } else {
-    printf("Packet Count    : %llu pkts\n", cnt);
+    printf("Packet Count      : %llu pkts\n", cnt);
   }
-  printf("Injection Delay : %ld us\n", delay);
+  printf("Injection Delay   : %ld us\n", delay);
   if (delay == 0) {
-    printf("Injection Rate  : unknown\n");
+    printf("Injection Rate    : unknown\n");
   } else {
-    printf("Injection Rate  : %.5f pkts/s\n", injectionRate);
+    printf("Injection Rate    : %.5f pkts/s\n", injectionRate);
   }
-  printf("Target          : %02x:%02x:%02x:%02x:%02x:%02x\n\n",
+  printf("Target            : %02x:%02x:%02x:%02x:%02x:%02x\n",
     dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
+  if (vMode) {
+    printf("Packet Content    :\n");
+    char *sendBufByte;
+    for (sendBufByte = &sendBuf[0]; *sendBufByte != 0; sendBufByte += 1) {
+      printf("%02x ", *sendBufByte);
+    }
+    printf("\n");
+  }
+  printf("\n");
   fflush(stdout);
 
   /* Set socket address */

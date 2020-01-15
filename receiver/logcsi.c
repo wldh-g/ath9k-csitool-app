@@ -104,6 +104,10 @@ int main(int argc, char *argv[])
   unsigned char buf_addr[BUFSIZE + 2];
   CSISTAT *csi_status = (CSISTAT *)malloc(sizeof(CSISTAT));
   size_t write_size;
+  const bool disp_info = !file_flag || verbose_flag;
+  const char *okay_sign = disp_info ? " -> OK" : ".";
+  const char *csi_broken_sign = disp_info ? " -> CSI Broken = Throw" : "C";
+  const char *write_fail_sign = disp_info ? " -> Write Fail" : "W";
 
   printf("Receiving data... Press Ctrl+C to quit.\n");
   signal(SIGINT, sigHandler);
@@ -120,14 +124,14 @@ int main(int argc, char *argv[])
       /* fill the status struct with information about the rx packet */
       record_status(&buf_addr[2], read_size, csi_status);
 
-      if (!file_flag || verbose_flag) {
+      if (disp_info) {
         fprintf(
           stdout,
-          "%d (%d B): phy(0x%02x) payload(%d B) csi(%d B) rate(0x%02x) nta(%d) nt(%d) nr(%d) noise(%d) timestamp(%lld)",
-          log_recv_count, csi_status->buf_len, csi_status->phyerr,
+          "%d (%dB): phyerr(%d) payload(%dB) csi(%dB) rate(0x%x) nt(%d) nr(%d) timestamp(%lld)",
+          log_write_count, csi_status->buf_len, csi_status->phyerr,
           csi_status->payload_len, csi_status->csi_len, csi_status->rate,
-          csi_status->nt_actual, csi_status->nt, csi_status->nr,
-          csi_status->noise, csi_status->timestamp
+          csi_status->nt, csi_status->nr,
+          csi_status->timestamp
         );
       }
 
@@ -137,25 +141,23 @@ int main(int argc, char *argv[])
         buf_addr[0] = csi_status->buf_len & 0xFF;
         buf_addr[1] = csi_status->buf_len >> 8;
 
-        if (verbose_flag) fprintf(stdout, " -> ");
-
         if (csi_status->nt == 0) {
-          fprintf(stdout, "C");
+          fprintf(stdout, csi_broken_sign);
         } else {
           write_size = fwrite(buf_addr, 1, csi_status->buf_len + 2, log);
 
           if (1 > write_size) {
-            fprintf(stdout, "W");
+            fprintf(stdout, write_fail_sign);
             perror("fwrite");
             recording = 0;
           } else {
-            fprintf(stdout, ".");
+            fprintf(stdout, okay_sign);
             log_write_count += 1;
           }
         }
       }
 
-      if (!file_flag || verbose_flag) fprintf(stdout, "\n");
+      if (disp_info) fprintf(stdout, "\n");
     }
   }
 
