@@ -238,9 +238,9 @@ int main(int argc, char *argv[]) {
     dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
   if (vMode) {
     printf("Packet Content    :\n");
-    char *sendBufByte;
-    for (sendBufByte = &sendBuf[0]; *sendBufByte != 0; sendBufByte += 1) {
-      printf("%02x ", *sendBufByte);
+    short bufi;
+    for (bufi = 0; bufi < pktSize; bufi += 1) {
+      printf("%02x ", sendBuf[bufi]);
     }
     printf("\n");
   }

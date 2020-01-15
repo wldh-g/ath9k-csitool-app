@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
         record_status(&buf_addr[2], read_size, csi_status);
         fprintf(
           stdout,
-          "%d (%dB): phyerr(%d) payload(%dB) csi(%dB) rate(0x%x) nt(%d) nr(%d) timestamp(%lld)",
+          "%d (%d): phyerr(%d) payload(%d) csi(%d) rate(0x%x) nt(%d) nr(%d) timestamp(%lld)",
           log_write_count, csi_status->buf_len, csi_status->phyerr,
           csi_status->payload_len, csi_status->csi_len, csi_status->rate,
           csi_status->nt, csi_status->nr,
