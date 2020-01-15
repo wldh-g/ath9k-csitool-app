@@ -122,9 +122,8 @@ int main(int argc, char *argv[])
       log_recv_count += 1;
 
       /* fill the status struct with information about the rx packet */
-      record_status(&buf_addr[2], read_size, csi_status);
-
       if (disp_info) {
+        record_status(&buf_addr[2], read_size, csi_status);
         fprintf(
           stdout,
           "%d (%dB): phyerr(%d) payload(%dB) csi(%dB) rate(0x%x) nt(%d) nr(%d) timestamp(%lld)",
@@ -133,6 +132,8 @@ int main(int argc, char *argv[])
           csi_status->nt, csi_status->nr,
           csi_status->timestamp
         );
+      } else {
+        record_status_min(&buf_addr[2], read_size, csi_status);
       }
 
       /* log the received data */
