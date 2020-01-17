@@ -16,7 +16,7 @@ The length of CSI data in bytes. `= 2.5 * nt * nr * nc`
 
 ##### channel
 
-The center frequency of the channel in MHz.
+The center frequency of the **primary channel** in MHz.
 
 ##### phy_err
 
@@ -39,9 +39,9 @@ If you made the record using `logcsi` tool in this repository, it automatically 
 
 ##### nc, nr, nt
 
-+ `nc` : The number of subcarriers
-+ `nr` : The number of receive antennas
-+ `nt` : The number of transmit antennas
++ `nc` : The number of sub*c*arriers
++ `nr` : The number of *r*eceive antennas
++ `nt` : The number of *t*ransmit antennas
 
 ##### rssi, rssi1, rssi2, rssi3
 
