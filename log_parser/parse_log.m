@@ -93,7 +93,7 @@ function ret = parse_log(filename)
 
         if csi_mat.csi_len > 0
             csi_buf = fread(f, csi_mat.csi_len, 'uint8=>uint8');
-            csi_mat.csi = read_csi(csi_buf, csi_mat.nr, csi_mat.nt, csi_mat.nc);
+            csi_mat.csi = parse_csi(csi_buf, csi_mat.nr, csi_mat.nt, csi_mat.nc);
             csi_mat.csi = permute(csi_mat.csi, [2 1 3]); % [nt, nr, nc]
             cur = cur + csi_mat.csi_len;
         else
@@ -131,6 +131,6 @@ function ret = parse_log(filename)
     end
 
     fclose(f);
-    fprintf("Read %d packets.\n", count);
+    fprintf("Parsed %d packets.\n", count);
 
 end
