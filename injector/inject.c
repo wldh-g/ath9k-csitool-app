@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
     printf("                   delay injection. (Default: %d)\n", DEFAULT_SEND_DELAY);
     printf("  -i INTERFACE     The name of network interface that the injector will use.\n");
     printf("                   (Default: %s)\n", DEFAULT_INTERFACE_NAME);
-    printf("  -s PACKET_SIZE   The size of packets in bytes (<=1024). (Default: %d)\n", DEFAULT_PACKET_SIZE);
+    printf("  -s PACKET_SIZE   The size of packets in bytes (18 <= PACKET_SIZE <= 2048).\n");
+    printf("                   (Default: %d)\n", DEFAULT_PACKET_SIZE);
     printf("  -a ADDRESS       The MAC address of the injection target client station.\n");
     printf("                   (Default: %02x:%02x:%02x:%02x:%02x:%02x)\n",
       DEFAULT_DEST_MAC0, DEFAULT_DEST_MAC1, DEFAULT_DEST_MAC2,
@@ -159,8 +160,8 @@ int main(int argc, char *argv[]) {
   } else if (cntSet == false) {
     printf("Packets to send are not set.\n");
     exit(1);
-  } else if (pktSize > 1024) {
-    printf("Packet size cannot be more than 1024.\n");
+  } else if (pktSize > 2048 || pktSize < 18) {
+    printf("Packet size should be more than 17 (>=18), less than 2049 (<=2048).\n");
     exit(1);
   } else {
     infCnt = cnt == 0;
@@ -205,23 +206,27 @@ int main(int argc, char *argv[]) {
   /* Set packet payload */
   const size_t ehSize = sizeof(struct ether_header);
   const size_t plSize = pktSize - ehSize;
-  unsigned int rbufSize = plSize;
+  unsigned int rbufSize = plSize - 4;
   if (!cMode) {
-    rbufSize = getrandom(&sendBuf[ehSize], plSize, 0);
+    rbufSize = getrandom(&sendBuf[ehSize], rbufSize, 0);
     if (rbufSize < 0) {
       perror("getrandom");
       exit(1);
     }
   } else {
-    memset(&sendBuf[ehSize], (char) 0xCC, plSize);
+    memset(&sendBuf[ehSize], (char) 0xCC, rbufSize);
   }
+  sendBuf[pktSize - 4] = 0x23;
+  sendBuf[pktSize - 3] = 0x50;
+  sendBuf[pktSize - 2] = 0xde;
+  sendBuf[pktSize - 1] = 0xe3;
 
   /* Display Injection Information */
   const double injectionRate = delay == 0 ? 0 : ((double) 1000000 / delay);
   printf("[Injection Information]\n");
   printf("Interface         : %s\n", interface);
   printf("Payload Generator : %s\n", cMode ? "0xCC" : "random");
-  printf("Payload Length    : %u bytes\n", rbufSize);
+  printf("Payload Length    : %u bytes\n", plSize);
   printf("Packet Length     : %zu bytes\n", pktSize);
   if (infCnt) {
     printf("Packet Count      : infinite pkts\n");

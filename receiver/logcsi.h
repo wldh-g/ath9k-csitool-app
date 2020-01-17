@@ -28,24 +28,26 @@ typedef struct
   u_int64_t timestamp;   // h/w assigned time stamp
 
   u_int16_t channel;     // wireless channel (represented in Hz)
-  u_int8_t bandwidth;    // channel bandwidth (0->20MHz, 1->40MHz)
+  u_int8_t  bandwidth;   // channel bandwidth (0->20MHz, 1->40MHz)
 
-  u_int8_t rate;         // transmission rate
-  u_int8_t nr;           // number of receiving antennas
-  u_int8_t nt;           // number of transmitting antennas
-  u_int8_t nc;           // number of tones (subcarriers)
-  u_int8_t noise;        // noise floor (to be updated)
+  u_int8_t  rate;        // transmission rate
+  u_int8_t  nr;          // number of receiving antennas
+  u_int8_t  nt;          // number of transmitting antennas
+  u_int8_t  nc;          // number of tones (subcarriers)
+  u_int8_t  noise;       // noise floor (to be updated)
 
-  u_int8_t phyerr;       // phy error code (set to 0 if correct)
+  u_int8_t  phyerr;      // phy error code (set to 0 if correct)
 
-  u_int8_t rssi;         // rx frame RSSI
-  u_int8_t rssi_0;       // rx frame RSSI [ctl, chain 0]
-  u_int8_t rssi_1;       // rx frame RSSI [ctl, chain 1]
-  u_int8_t rssi_2;       // rx frame RSSI [ctl, chain 2]
+  u_int8_t  rssi;        // rx frame RSSI
+  u_int8_t  rssi_0;      // rx frame RSSI [ctl, chain 0]
+  u_int8_t  rssi_1;      // rx frame RSSI [ctl, chain 1]
+  u_int8_t  rssi_2;      // rx frame RSSI [ctl, chain 2]
 
   u_int16_t payload_len; // payload length (bytes)
   u_int16_t csi_len;     // csi data length (bytes)
   u_int16_t buf_len;     // data length in buffer
+
+  u_int8_t  checker[4];  // destination MAC address
 } CSISTAT;
 
 inline bool is_big_endian()
@@ -99,6 +101,11 @@ void record_status_min(unsigned char *buf_addr, ssize_t read_size, CSISTAT *csi_
   }
 
   csi_status->nt = buf_addr[18];
+
+  csi_status->checker[0] = buf_addr[read_size - 10];
+  csi_status->checker[1] = buf_addr[read_size - 9];
+  csi_status->checker[2] = buf_addr[read_size - 8];
+  csi_status->checker[3] = buf_addr[read_size - 7];
 }
 
 void record_status(unsigned char *buf_addr, ssize_t read_size, CSISTAT *csi_status)
@@ -160,3 +167,4 @@ void record_status(unsigned char *buf_addr, ssize_t read_size, CSISTAT *csi_stat
   csi_status->rssi_1 = buf_addr[21];
   csi_status->rssi_2 = buf_addr[22];
 }
+

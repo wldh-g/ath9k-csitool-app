@@ -106,11 +106,13 @@ int main(int argc, char *argv[])
   size_t write_size;
   const bool disp_info = !file_flag || verbose_flag;
   const char *okay_sign = disp_info ? " -> OK" : ".";
-  const char *csi_broken_sign = disp_info ? " -> CSI Broken = Throw" : "C";
+  const char *csi_broken_sign = disp_info ? " -> CSI Broken = Throw" : "B";
   const char *write_fail_sign = disp_info ? " -> Write Fail" : "W";
+  const char *not_intended_sign = disp_info ? " -> Not Intended = Throw" : "I";
 
   /* print iw dev wlp1s0 info */
   system("iw dev wlp1s0 info");
+  printf("\nIf there is no \"ssid\" item, check the connection to injector device.\n");
 
   /* listen CSI */
   printf("\nReceiving data... Press Ctrl+C to quit.\n\n");
@@ -130,25 +132,34 @@ int main(int argc, char *argv[])
         record_status(&buf_addr[2], read_size, csi_status);
         fprintf(
           stdout,
-          "%d (%d): phyerr(%d) payload(%d) csi(%d) rate(0x%d) nt(%d) nr(%d) timestamp(%lld)",
+          "%d (%d): phyerr(%d) payload(%d) csi(%d) rate(0x%d) nt(%d) nr(%d) nc(%d) timestamp(%lld)",
           log_write_count, csi_status->buf_len, csi_status->phyerr,
           csi_status->payload_len, csi_status->csi_len, csi_status->rate,
-          csi_status->nt, csi_status->nr,
+          csi_status->nt, csi_status->nr, csi_status->nc,
           csi_status->timestamp
         );
       } else {
         record_status_min(&buf_addr[2], read_size, csi_status);
       }
 
-      /* log the received data */
-      if (file_flag)
-      {
-        buf_addr[0] = csi_status->buf_len & 0xFF;
-        buf_addr[1] = csi_status->buf_len >> 8;
+      /* check is really intended packet */
+      if (
+           (csi_status->checker[0] != 0x23)
+        || (csi_status->checker[1] != 0x50)
+        || (csi_status->checker[2] != 0xde)
+        || (csi_status->checker[3] != 0xe3)
+         ) {
+        fprintf(stdout, not_intended_sign);
+      }
 
+      /* log the received data */
+      else if (file_flag)
+      {
         if (csi_status->nt == 0) {
           fprintf(stdout, csi_broken_sign);
         } else {
+          buf_addr[0] = csi_status->buf_len & 0xFF;
+          buf_addr[1] = csi_status->buf_len >> 8;
           write_size = fwrite(buf_addr, 1, csi_status->buf_len + 2, log);
 
           if (1 > write_size) {
