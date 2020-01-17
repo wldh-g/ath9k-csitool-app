@@ -109,7 +109,11 @@ int main(int argc, char *argv[])
   const char *csi_broken_sign = disp_info ? " -> CSI Broken = Throw" : "C";
   const char *write_fail_sign = disp_info ? " -> Write Fail" : "W";
 
-  printf("Receiving data... Press Ctrl+C to quit.\n\n");
+  /* print iw dev wlp1s0 info */
+  system("iw dev wlp1s0 info");
+
+  /* listen CSI */
+  printf("\nReceiving data... Press Ctrl+C to quit.\n\n");
   signal(SIGINT, sigHandler);
   setbuf(stdout, NULL);
   while (recording)
