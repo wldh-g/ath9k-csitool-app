@@ -1,6 +1,6 @@
-# *read_log* Data Instruction
+# *parse_log* Data Instruction
 
-In *read_log*, each packet cell consists of:
+In *parse_log*, each packet cell consists of:
 
 `timestamp`, `csi_len`, `channel`, `phy_err`, `noise`, `rate`, `bandwidth`, `nc`, `nr`, `nt`, `rssi`, `rssi1`, `rssi2`, `rssi3`, `payload_len`, `csi`
 
@@ -8,9 +8,11 @@ In *read_log*, each packet cell consists of:
 
 A timestamp recorded by receiver hardware. Unit is microseconds.
 
-##### csi_len - TODO
+##### csi_len
 
 The length of CSI data in bytes. `= 2.5 * nt * nr * nc`
+
+`2.5` is 20 bits, each 10 bits for real and imagine number expression.
 
 ##### channel
 
@@ -20,30 +22,42 @@ The center frequency of the channel in MHz.
 
 PHY layer error code from ath9k driver. Look [here](https://github.com/wldh-g/BPI-R2-Atheros-CSITool/blob/5.4-main/drivers/net/wireless/ath/ath9k/mac.h#L193-L230) for detailed code information.
 
-##### noise - TODO
+##### noise
+
+Currently unavailable in CSI tool. `= 0`.
 
 ##### rate
 
 [HT MCS](http://mcsindex.com/). If `csi_len` is 0, this can mean CCK or OFDM rate.
 
-If `logcsi` in this repository was used to make log, it automatically removes HT flag (7th bit) to reveal the MCS number more clearly.
+If you made the record using `logcsi` tool in this repository, it automatically removes HT flag (7th bit) to reveal the MCS number more clearly.
 
 ##### bandwidth
 
 + `0` : 20MHz
 + `1` : 40MHz
 
-##### nc, nr, nt, nt_actual
+##### nc, nr, nt
 
 + `nc` : The number of subcarriers
 + `nr` : The number of receive antennas
 + `nt` : The number of transmit antennas
-+ `nt_actual` :
 
-##### rssi, rssi1, rssi2, rssi3 - TODO
+##### rssi, rssi1, rssi2, rssi3
 
-##### payload_len - TODO
++ `rssi`  : Combined RSSI (Sum of 3 decibel values below)
++ `rssi1` : RSSI of primary channel from Antenna 01
++ `rssi2` : RSSI of primary channel from Antenna 02
++ `rssi3` : RSSI of primary channel from Antenna 03
+
+`128` in RSSI means "no data".
+
+##### payload_len
 
 The length of payload in bytes. `= injection packet size + 26`
 
-##### csi - TODO
+Look [here](/receiver/logcsi.md#what-are-those-26-bytes) for why `+ 26`.
+
+##### csi
+
+Your channel state information.

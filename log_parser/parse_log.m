@@ -1,6 +1,6 @@
 %%
 %% =============================================================================
-%%       Filename:  read_log.m
+%%       Filename:  parse_log.m
 %%
 %%    Description:  extract the CSI, payload, and packet status information from
 %%                  the log file
@@ -16,7 +16,7 @@
 %% =============================================================================
 %%
 
-function ret = read_log(filename)
+function ret = parse_log(filename)
 
     endian_format = 'ieee-le';
     min_pkt_len = 165;

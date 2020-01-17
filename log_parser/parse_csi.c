@@ -1,8 +1,8 @@
 /*
  * =============================================================================
- *       Filename:  read_csi.c
+ *       Filename:  parse.c
  *
- *    Description:  read csi for matlab
+ *    Description:  parse csi for matlab
  *        Version:  1.0
  *
  *         Author:  Yaxiong Xie
@@ -35,30 +35,30 @@ void mexFunction(int nlhs, mxArray *plhs[],
   unsigned char *local_h;
   unsigned int *csi_len_p, csi_len;
   unsigned int *nr_p, nr;
+  unsigned int *nt_p, nt;
   unsigned int *nc_p, nc;
-  unsigned int *num_tones_p, num_tones;
 
   unsigned int bitmask, idx, current_data;
   unsigned int h_data, h_idx;
 
   int k;
   int real, imag;
-  int bits_left, nc_idx, nr_idx;
+  int bits_left, nt_idx, nr_idx;
 
   /*  check for proper number of arguments */
   if (nrhs != 4)
   {
-    mexErrMsgIdAndTxt("MIMOToolbox:read_csi:nrhs", "Four input required.");
+    mexErrMsgIdAndTxt("MIMOToolbox:parse_csi:nrhs", "Four input required.");
   }
   if (nlhs != 1)
   {
-    mexErrMsgIdAndTxt("MIMOToolbox:read_csi:nlhs", "One output required.");
+    mexErrMsgIdAndTxt("MIMOToolbox:parse_csi:nlhs", "One output required.");
   }
 
   /*  make sure the input argument is a char array */
   if (!mxIsClass(prhs[0], "uint8"))
   {
-    mexErrMsgIdAndTxt("MIMOToolbox:read_csi:notBytes",
+    mexErrMsgIdAndTxt("MIMOToolbox:parse_csi:notBytes",
                       "Input must be a char array");
   }
 
@@ -67,13 +67,13 @@ void mexFunction(int nlhs, mxArray *plhs[],
   nr_p = (unsigned int *)mxGetPr(prhs[1]);
   nr = *nr_p;
 
-  nc_p = (unsigned int *)mxGetPr(prhs[2]);
+  nt_p = (unsigned int *)mxGetPr(prhs[2]);
+  nt = *nt_p;
+
+  nc_p = (unsigned int *)mxGetPr(prhs[3]);
   nc = *nc_p;
 
-  num_tones_p = (unsigned int *)mxGetPr(prhs[3]);
-  num_tones = *num_tones_p;
-
-  const mwSize size[] = {nr, nc, num_tones};
+  const mwSize size[] = {nr, nt, nc};
 
   mxArray *csi = mxCreateNumericArray(3, size, mxDOUBLE_CLASS, mxCOMPLEX);
   double *ptrR = (double *)mxGetPr(csi);
@@ -88,9 +88,9 @@ void mexFunction(int nlhs, mxArray *plhs[],
   h_data += (local_h[idx++] << BITS_PER_BYTE);
   current_data = h_data & ((1 << 16) - 1); /* get 16 LSBs first */
 
-  for (k = 0; k < num_tones; k++)
+  for (k = 0; k < nc; k++)
   {
-    for (nc_idx = 0; nc_idx < nc; nc_idx++)
+    for (nt_idx = 0; nt_idx < nt; nt_idx++)
     {
       for (nr_idx = 0; nr_idx < nr; nr_idx++)
       {
