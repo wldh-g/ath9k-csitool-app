@@ -8,17 +8,17 @@ This tool only supports ath9k-based CSI collection and you must install [modifie
 
 ##### Transmitter
 
-Before contiune, install `hostapd`, `isc-dhcp-server`.
+Before contiune, install `libnl-3`, `libnl-3-dev`, `isc-dhcp-server`.
 
 ```sh
-git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
+git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git --recurse-submodules
 cd BPI-R2-Atheros-CSITool-App/injector
-make
-./load.sh
-sudo ./inject -h
+make -j4 # Build injector and hostapd
+./load.sh -h # Prints help message
+sudo ./inject -h # Prints help message
 ```
 
-You can configure MCS, channel at  `injector/hostapd.conf`.
+You can configure channels and HT mode using `./load.sh`. Run `unload.sh` before rerun `load.sh` to change the configuration.
 
 To turn off dhcp server and hostapd, unload the injector:
 
@@ -31,8 +31,8 @@ To turn off dhcp server and hostapd, unload the injector:
 ```sh
 git clone https://github.com/wldh-g/BPI-R2-Atheros-CSITool-App.git
 cd BPI-R2-Atheros-CSITool-App/receiver
-make
-./setup.sh
+make # Build logger
+./connect.sh # Do this after each load at transmitter
 sudo ./logcsi -h
 ```
 

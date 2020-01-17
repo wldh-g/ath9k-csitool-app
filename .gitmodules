@@ -1,0 +1,3 @@
+[submodule "injector/hostap"]
+	path = injector/hostap
+	url = https://github.com/wldh-g/hostap-ht40
