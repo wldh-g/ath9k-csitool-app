@@ -237,10 +237,10 @@ int main(int argc, char *argv[]) {
   printf("Target            : %02x:%02x:%02x:%02x:%02x:%02x\n",
     dstAddr[0], dstAddr[1], dstAddr[2], dstAddr[3], dstAddr[4], dstAddr[5]);
   if (vMode) {
-    printf("Packet Content    :\n");
+    printf("Packet Content    :");
     short bufi;
     for (bufi = 0; bufi < pktSize; bufi += 1) {
-      printf("%02x ", sendBuf[bufi]);
+      printf(" %02X", sendBuf[bufi]);
     }
     printf("\n");
   }
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
     fflush(stdout);
   }
 
-  printf("\nInjection Completed.\n");
+  printf("\n\nInjection Completed.\n");
 
   return 0;
 

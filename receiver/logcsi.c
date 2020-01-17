@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   const char *csi_broken_sign = disp_info ? " -> CSI Broken = Throw" : "C";
   const char *write_fail_sign = disp_info ? " -> Write Fail" : "W";
 
-  printf("Receiving data... Press Ctrl+C to quit.\n");
+  printf("Receiving data... Press Ctrl+C to quit.\n\n");
   signal(SIGINT, sigHandler);
   setbuf(stdout, NULL);
   while (recording)
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
   }
 
   /* clean */
-  printf("\nReceived %d packets.\n", log_recv_count);
+  printf("\n\nReceived %d packets.\n", log_recv_count);
   if (file_flag) {
     printf("Wrote %d packets to \"%s\".\n", log_write_count, file_name);
     fclose(log);
