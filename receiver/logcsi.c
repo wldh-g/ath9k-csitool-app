@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
         fprintf(
           stdout,
           "%d (%d): phyerr(%d) payload(%d) csi(%d) rate(0x%d) nt(%d) nr(%d) nc(%d) timestamp(%lld)",
-          log_write_count, csi_status->buf_len, csi_status->phyerr,
+          log_write_count + 1, csi_status->buf_len, csi_status->phyerr,
           csi_status->payload_len, csi_status->csi_len, csi_status->rate,
           csi_status->nt, csi_status->nr, csi_status->nc,
           csi_status->timestamp
