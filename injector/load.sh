@@ -1,7 +1,9 @@
 #!/usr/bin/sudo /bin/bash
 
 print_help() {
-	echo "Usage   : ./load.sh CHANNEL_INDEX [+|-]"
+	echo "Usage   : ./load.sh CHANNEL_INDEX [MCS_INDEX] [+|-]"
+	echo "Example : ./load.sh 1 0 -"
+	echo "Example : ./load.sh 1 31"
 	echo "Example : ./load.sh 1 +"
 	echo "Example : ./load.sh 6"
 	exit
@@ -23,14 +25,41 @@ fi
 
 if [ "$2" == "" ]; then
 	echo "ht_capab=[SHORT-GI-20][HT20]" >> ./hostapd.temp.conf
+	echo "beacon_rate=ht:0" >> ./hostapd.temp.conf
 elif [ "$2" == "+" ]; then
 	echo "ht_capab=[SHORT-GI-40][HT40+]" >> ./hostapd.temp.conf
+	echo "beacon_rate=ht:0" >> ./hostapd.temp.conf
 elif [ "$2" == "-" ]; then
 	echo "ht_capab=[SHORT-GI-40][HT40-]" >> ./hostapd.temp.conf
+	echo "beacon_rate=ht:0" >> ./hostapd.temp.conf
 else
-	echo "Incorrect HT mode character!"
-	rm ./hostapd.temp.conf
-	print_help
+	MCS_INDEX=$(echo $2 | tr -dc '0-9')
+	if [ "$MCS_INDEX" == "" ]; then
+		echo "Incorrect HT mode character!"
+		rm ./hostapd.temp.conf
+		print_help
+	elif [ "$MCS_INDEX" -gt "32" ]; then
+		echo "MCS Index is too large."
+		rm ./hostapd.temp.conf
+		print_help
+	elif [ "$MCS_INDEX" -lt "0" ]; then
+		echo "MCS Index is too small."
+		rm ./hostapd.temp.conf
+		print_help
+	else
+		echo "beacon_rate=ht:$MCS_RATE" >> ./hostapd.temp.conf
+		if [ "$3" == "" ]; then
+			echo "ht_capab=[SHORT-GI-20][HT20]" >> ./hostapd.temp.conf
+		elif [ "$3" == "+" ]; then
+			echo "ht_capab=[SHORT-GI-40][HT40+]" >> ./hostapd.temp.conf
+		elif [ "$3" == "-" ]; then
+			echo "ht_capab=[SHORT-GI-40][HT40-]" >> ./hostapd.temp.conf
+		else
+			echo "Incorrect HT mode character!"
+			rm ./hostapd.temp.conf
+			print_help
+		fi
+	fi
 fi
 
 ip addr add 10.5.19.1/24 dev wlp1s0 > /dev/null 2>&1
