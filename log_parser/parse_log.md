@@ -52,6 +52,8 @@ If you made the record using `logcsi` tool in this repository, it automatically 
 
 `128` in RSSI means "no data".
 
+You should subtract `95` from all RSSI values excluding 128 to convert to dBm unit. It's because the atheros chip processes RSSI in that way.
+
 ##### payload_len
 
 The length of payload in bytes. `= injection packet size + 26`
