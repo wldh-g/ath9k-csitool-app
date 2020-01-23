@@ -6,6 +6,15 @@ print_help() {
 	echo "Example : ./load.sh 1 31"
 	echo "Example : ./load.sh 1 +"
 	echo "Example : ./load.sh 6"
+	echo
+	echo "CHANNEL_INDEX"
+	echo "  802.11 Channel Index."
+	echo
+	echo "MCS_INDEX"
+	echo "  HT MCS Index. Auto mode if unset."
+	echo
+	echo "HT_MODE"
+	echo "  Use HT20 or HT40. HT20 will used if unset."
 	exit
 }
 
@@ -25,15 +34,12 @@ fi
 
 if [ "$2" == "" ]; then
 	echo "ht_capab=[SHORT-GI-20][HT20]" >> ./hostapd.temp.conf
-	echo "beacon_rate=ht:0" >> ./hostapd.temp.conf
 elif [ "$2" == "+" ]; then
 	echo "ht_capab=[SHORT-GI-40][HT40+]" >> ./hostapd.temp.conf
-	echo "beacon_rate=ht:0" >> ./hostapd.temp.conf
 elif [ "$2" == "-" ]; then
 	echo "ht_capab=[SHORT-GI-40][HT40-]" >> ./hostapd.temp.conf
-	echo "beacon_rate=ht:0" >> ./hostapd.temp.conf
 else
-	MCS_INDEX=$(echo $2 | tr -dc '0-9')
+	MCS_INDEX=$(echo $2 | tr -dc "0-9")
 	if [ "$MCS_INDEX" == "" ]; then
 		echo "Incorrect HT mode character!"
 		rm ./hostapd.temp.conf
@@ -47,7 +53,7 @@ else
 		rm ./hostapd.temp.conf
 		print_help
 	else
-		echo "beacon_rate=ht:$MCS_RATE" >> ./hostapd.temp.conf
+		echo "beacon_rate=ht:$MCS_INDEX" >> ./hostapd.temp.conf
 		if [ "$3" == "" ]; then
 			echo "ht_capab=[SHORT-GI-20][HT20]" >> ./hostapd.temp.conf
 		elif [ "$3" == "+" ]; then
@@ -67,6 +73,6 @@ systemctl stop isc-dhcp-server > /dev/null 2>&1
 dhcpd -cf ./dhcpd.conf
 ./hostap/hostapd/hostapd -d ./hostapd.temp.conf -B
 
-rm ./hostapd.temp.conf
+#rm ./hostapd.temp.conf
 
 echo "Injector Configured."
