@@ -107,12 +107,24 @@ int main(int argc, char *argv[])
   const bool disp_info = !file_flag || verbose_flag;
   const char *okay_sign = disp_info ? " -> OK" : ".";
   const char *csi_broken_sign = disp_info ? " -> CSI Broken = Throw" : "B";
-  const char *write_fail_sign = disp_info ? " -> Write Fail" : "W";
+  const char *bw_mismatch_sign = disp_info ? " -> Bandwidth Mismatch = Throw" : "W";
+  const char *write_fail_sign = disp_info ? " -> Write Fail" : "F";
   const char *not_intended_sign = disp_info ? " -> Not Intended = Throw" : "I";
+
+  /* check is connected to AP */
+  if (system("iw dev wlp1s0 info | grep 'ssid' > /dev/null") != 0) {
+    printf("The injector is not connected!");
+    exit(1);
+  }
+
+  /* get bandwidth */
+  bool bandwidth = 0;
+  if (system("iw dev wlp1s0 info | grep '20 MHz' > /dev/null") != 0) {
+    bandwidth = 1;
+  }
 
   /* print iw dev wlp1s0 info */
   system("iw dev wlp1s0 info");
-  printf("\nIf there is no \"ssid\" item, check the connection to injector device.\n");
 
   /* listen CSI */
   printf("\nReceiving data... Press Ctrl+C to quit.\n\n");
@@ -157,6 +169,8 @@ int main(int argc, char *argv[])
       {
         if (csi_status->nt == 0) {
           fprintf(stdout, csi_broken_sign);
+        } else if (csi_status->bandwidth != bandwidth) {
+          fprintf(stdout, bw_mismatch_sign);
         } else {
           buf_addr[0] = csi_status->buf_len & 0xFF;
           buf_addr[1] = csi_status->buf_len >> 8;
